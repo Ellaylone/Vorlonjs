@@ -153,13 +153,16 @@ module VORLON {
             parentNode.appendChild(elt);
             return elt;
         }
+
+        public startClient() {
+            this.setupXMLHttpRequestHook();
+        }
     }
 
+    const plugin = new XHRPanelClient();
+
     XHRPanelClient.prototype.ClientCommands = {
-        start: function (data: any) {
-            var plugin = <XHRPanelClient>this;
-            plugin.setupXMLHttpRequestHook();
-        },
+        start: () => plugin.startClient(),
         stop: function (data: any) {
             var plugin = <XHRPanelClient>this;
             plugin.removeXMLHttpRequestHook();
@@ -175,5 +178,6 @@ module VORLON {
     };
     
     //Register the plugin with vorlon core
-    Core.RegisterClientPlugin(new XHRPanelClient());
+    Core.RegisterClientPlugin(plugin);
+    window.onload = () => plugin.startClient();
 }
