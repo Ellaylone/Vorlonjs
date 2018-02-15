@@ -110,6 +110,9 @@ module VORLON {
                         .append('DIV', 'url item', (fdUrl) => { 
                             fdUrl.text(item.url) 
                         })                    
+                        .append('DIV', 'item', (fdResponse) => {
+                            fdResponse.text(item.response);
+                        })
                     })
                     .append('DIV', 'details', (fdDesc) => {
                         fdDesc.append('DIV', 'responsetype', (fdResponseType) => { 

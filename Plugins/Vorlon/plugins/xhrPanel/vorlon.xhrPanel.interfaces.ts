@@ -9,5 +9,6 @@ module VORLON {
         responseHeaders : any;
         requestHeaders: any[];
         readyState: number;
+        response: any;
     }
 }

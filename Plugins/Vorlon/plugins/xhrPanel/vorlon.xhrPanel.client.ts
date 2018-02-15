@@ -6,6 +6,7 @@ module VORLON {
         private _previousOpen;
         private _previousSetRequestHeader;
         private _xhrSource;
+        private _fetch;
         private _hookAlreadyDone;
 
         constructor() {
@@ -154,6 +155,57 @@ module VORLON {
             return elt;
         }
 
+        public setupFetchHook() {
+            const that = this;
+
+            const data = {
+                id: VORLON.Tools.CreateGUID(),
+                url: null,
+                status : null,
+                statusText : null,
+                method: null,
+                responseType: null,
+                responseHeaders : null,
+                requestHeaders : [],
+                readyState: 0,
+                response: null,
+            };
+            this.cache.push(data);
+
+            if (Tools.IsWindowAvailable && (window as any).fetch) {
+                this._fetch = (window as any).fetch.bind(window);
+                (window as any).fetch = (...props) => {
+                    data.id = VORLON.Tools.CreateGUID();
+                    data.method = props[0].method;
+                    data.url = props[0].url;
+
+                    this.trace('request for ' + data.url);
+                    this.sendCommandToDashboard('xhr', data);
+
+                    return this._fetch(...props)
+                        .then((res) => {
+                            data.status = res.status;
+                            data.statusText = res.statusText;
+
+                            that.sendCommandToDashboard('xhr', data);
+
+                            const res2 = res.clone()
+                            return res.json()
+                                .then((body, ...props) => {
+                                    data.readyState = 4;
+                                    data.response = JSON.stringify(body);
+                                    that.sendCommandToDashboard('xhr', data);
+
+                                    return res2;
+                                });
+                        });
+                }
+
+                this.hooked = true;
+                this.sendStateToDashboard();
+            }
+        }
+
         public startClient() {
             this.setupXMLHttpRequestHook();
         }
@@ -179,5 +231,5 @@ module VORLON {
     
     //Register the plugin with vorlon core
     Core.RegisterClientPlugin(plugin);
-    window.onload = () => plugin.startClient();
+    plugin.setupFetchHook();
 }
