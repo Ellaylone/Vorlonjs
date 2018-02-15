@@ -213,7 +213,7 @@ module VORLON {
                         return res.json()
                             .then((body, ...props) => {
                                 data.readyState = 4;
-                                data.response = JSON.stringify(body);
+                                data.response = JSON.stringify(body, null, '    ');
                                 that.sendCommandToDashboard('xhr', data);
 
                                 return res2;

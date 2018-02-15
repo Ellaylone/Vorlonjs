@@ -95,7 +95,7 @@ module VORLON {
             statusElt : HTMLElement;
             responseTypeElt : HTMLElement;
             item: NetworkEntry;
-            
+
             constructor(parent: HTMLElement, item: NetworkEntry){
                 this.item = item;
                 this.element = new VORLON.FluentDOM('DIV', 'network-item')
@@ -110,15 +110,31 @@ module VORLON {
                         .append('DIV', 'url item', (fdUrl) => { 
                             fdUrl.text(item.url) 
                         })                    
-                        .append('DIV', 'item', (fdResponse) => {
-                            fdResponse.text(item.response || item.responseText || item.responseXML);
-                        })
                     })
                     .append('DIV', 'details', (fdDesc) => {
                         fdDesc.append('DIV', 'responsetype', (fdResponseType) => { 
                             this.responseTypeElt = fdResponseType.element;
                             fdResponseType.html('&nbsp;'); 
                         })
+                    })
+                    .append('DIV', 'description', (fdDesc) => {
+                        const toggleState = fdDesc.createChild('DIV').text('▷');
+                        const responseDiv = fdDesc.createChild('DIV', 'item hidden');
+                        fdDesc.append('SPAN', '', (clickable) => {
+                            let opened = false;
+                            fdDesc.click(() => {
+                                opened = !opened;
+                                if (opened) {
+                                    toggleState.text('▽');
+                                } else {
+                                    toggleState.text('▷');
+                                }
+                                Tools.ToggleClass(responseDiv.element, "hidden")
+                            })
+                        });
+
+                        const response = responseDiv.createChild('PRE')
+                            .text(item.response || item.responseText || item.responseXML);
                     })
                     
                     .element;
