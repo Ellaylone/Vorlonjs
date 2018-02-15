@@ -10,5 +10,7 @@ module VORLON {
         requestHeaders: any[];
         readyState: number;
         response: any;
+        responseText: any;
+        responseXML: any;
     }
 }

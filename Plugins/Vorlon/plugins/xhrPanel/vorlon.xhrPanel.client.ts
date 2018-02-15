@@ -55,12 +55,15 @@ module VORLON {
                 responseHeaders : null,
                 requestHeaders : [],
                 readyState: 0,
+                response: null,
+                responseText: null,
+                responseXML: null,
             }
             this.cache.push(data);
             
             if(!this._previousOpen){ 
                 this._previousOpen = xhrSource.prototype.open;
-                this._previousSetRequestHeader = xhrSource.prototype.setRequestHeader;
+                // this._previousSetRequestHeader = xhrSource.prototype.setRequestHeader;
             } 
             
             //todo catch send to get posted data
@@ -83,6 +86,9 @@ module VORLON {
                         data.responseType = xhr.responseType;
                         data.status = xhr.status;    
                         data.statusText = xhr.statusText;
+                        data.response = JSON.stringify(xhr.response);
+                        data.responseText = JSON.stringify(xhr.responseText);
+                        data.responseXML = JSON.stringify(xhr.responseXML);
                         
                         if (xhr.getAllResponseHeaders)     
                             data.responseHeaders = xhr.getAllResponseHeaders();
@@ -91,18 +97,31 @@ module VORLON {
                     }
                     that.sendCommandToDashboard('xhr', data);
                 });
+
+                this.addEventListener("load", function() {
+                    var xhr = this;
+
+                    data.response = JSON.stringify(xhr.response);
+                    data.responseText = JSON.stringify(xhr.responseText);
+                    data.responseXML = JSON.stringify(xhr.responseXML);
+
+                    that.sendCommandToDashboard('xhr', data);
+                });
                 
                 return that._previousOpen.apply(this, arguments);
             }
-            
-            xhrSource.prototype.setRequestHeader = function() {
-                var header = {
-                    name : arguments[0],
-                    value : arguments[1]
-                }
-                data.requestHeaders.push(header);
-                return this._previousSetRequestHeader.apply(this, arguments);
-            }
+
+            // FIXME // TODO temporary commented cause for some reason breaks on orsay
+            // xhrSource.prototype.setRequestHeader = function() {
+            //     var header = {
+            //         name : arguments[0],
+            //         value : arguments[1]
+            //     }
+            //     data.requestHeaders.push(header);
+            //     if (this._previousSetRequestHeader) {
+            //         return this._previousSetRequestHeader.apply(this, arguments);
+            //     }
+            // }
 
         }
 
@@ -169,41 +188,41 @@ module VORLON {
                 requestHeaders : [],
                 readyState: 0,
                 response: null,
+                responseText: null,
+                responseXML: null,
             };
             this.cache.push(data);
 
-            if (Tools.IsWindowAvailable && (window as any).fetch) {
-                this._fetch = (window as any).fetch.bind(window);
-                (window as any).fetch = (...props) => {
-                    data.id = VORLON.Tools.CreateGUID();
-                    data.method = props[0].method;
-                    data.url = props[0].url;
+            this._fetch = (window as any).fetch.bind(window);
+            (window as any).fetch = (...props) => {
+                data.id = VORLON.Tools.CreateGUID();
+                data.method = props[0].method;
+                data.url = props[0].url;
 
-                    this.trace('request for ' + data.url);
-                    this.sendCommandToDashboard('xhr', data);
+                this.trace('request for ' + data.url);
+                this.sendCommandToDashboard('xhr', data);
 
-                    return this._fetch(...props)
-                        .then((res) => {
-                            data.status = res.status;
-                            data.statusText = res.statusText;
+                return this._fetch(...props)
+                    .then((res) => {
+                        data.status = res.status;
+                        data.statusText = res.statusText;
 
-                            that.sendCommandToDashboard('xhr', data);
+                        that.sendCommandToDashboard('xhr', data);
 
-                            const res2 = res.clone()
-                            return res.json()
-                                .then((body, ...props) => {
-                                    data.readyState = 4;
-                                    data.response = JSON.stringify(body);
-                                    that.sendCommandToDashboard('xhr', data);
+                        const res2 = res.clone()
+                        return res.json()
+                            .then((body, ...props) => {
+                                data.readyState = 4;
+                                data.response = JSON.stringify(body);
+                                that.sendCommandToDashboard('xhr', data);
 
-                                    return res2;
-                                });
-                        });
-                }
-
-                this.hooked = true;
-                this.sendStateToDashboard();
+                                return res2;
+                            });
+                    });
             }
+
+            this.hooked = true;
+            this.sendStateToDashboard();
         }
 
         public startClient() {
@@ -231,5 +250,9 @@ module VORLON {
     
     //Register the plugin with vorlon core
     Core.RegisterClientPlugin(plugin);
-    plugin.setupFetchHook();
+    if (Tools.IsWindowAvailable && (window as any).fetch) {
+        plugin.setupFetchHook();
+    } else {
+        plugin.setupXMLHttpRequestHook();
+    }
 }

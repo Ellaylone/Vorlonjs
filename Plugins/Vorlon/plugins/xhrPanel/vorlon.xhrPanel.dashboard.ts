@@ -111,7 +111,7 @@ module VORLON {
                             fdUrl.text(item.url) 
                         })                    
                         .append('DIV', 'item', (fdResponse) => {
-                            fdResponse.text(item.response);
+                            fdResponse.text(item.response || item.responseText || item.responseXML);
                         })
                     })
                     .append('DIV', 'details', (fdDesc) => {
